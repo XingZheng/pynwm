@@ -1,17 +1,14 @@
 #!/usr/bin/python2
 """Downloads data from the National Water Model via HydroShare.
-
 The National Water Model is a series of model products from the National
 Weather Service which compute streamflow for roughly 2.7 million river reaches
 in the contiguous United States, where each river reach is a feature from the
 National Hydrography Dataset and is identified by its unique COMID value.
-
 The National Water Model includes an analysis and assimilation product that
 represents the best estimate of current or historical streamflow conditions,
 and three forecast products that cover short, medium, and long range forecasts.
 Model results are available as a set of netCDF files, with a single file per
 time step. For more on the model, see http://water.noaa.gov/about/nwm.
-
 HydroShare is a National Science Foundation funded project which provides a
 number of service to the hydrologic sciences community, including archiving
 and providing access to National Water Model results. They include API for
@@ -21,13 +18,11 @@ to add value to the model product by adding latitude and longitude coordinates
 as variables within each model file. The doubles the file size, but enables the
 file to be displayed in common netCDF viewing software. During this process,
 the file is also converted from netCDF 3 format to netCDF 4 format.
-
 In addition to documented API methods, the HydroShare API includes a couple of
 hidden methods used by the demonstration apps. The apps include a time series
 viewer and a file explorer, available at (respectively):
 https://apps.hydroshare.org/apps/nwm-forecasts/
 https://apps.hydroshare.org/apps/nwm-data-explorer/
-
 This Python module includes functions for accessing data from the HydroShare
 API into the National Water Model archive.
 """
@@ -57,13 +52,10 @@ def get_latest_analysis_filename():
 
 def get_latest_analysis_file(output_folder):
     """Downloads latest analysis and assimilation file.
-
     Downloads latest analysis and assimilation file to the output folder and
     unzips it.
-
     Args:
         output_folder: Path to the folder where the file will be saved.
-
     Returns:
         Filename, including directory, of the downloaded file.
     """
@@ -95,7 +87,6 @@ def get_analysis_bounding_dates():
 
 def get_latest_forecast_date(product):
     """Returns latest forecast date for the given forecast product.
-
     HydroShare stores a rolling archive of forecasts due to size limitations,
     so the start date of available forecasts changes over time.  As forecasts
     arrive at HydroShare from NOAA, a folder for the forecast date is created
@@ -104,18 +95,16 @@ def get_latest_forecast_date(product):
     arrived yet. Therefore, we require that the last expected time step for the
     product is available in the folder before considering that forecast
     complete.
-
     Args:
         product: String indicating model product. Valid values are:
             short_range, medium_range, long_range
-
     Returns:
         Datetime object of latest forecast date, or None if no complete
         forecast is found.
     """
 
     valid_products = {'short_range': {'suffix_pattern': '',
-                                      'max_time_step': '015'},
+                                      'max_time_step': '018'},
                       'medium_range': {'suffix_pattern': '',
                                        'max_time_step': '240'},
                       'long_range': {'suffix_pattern': '_[1-4]',
@@ -217,12 +206,10 @@ def _unpack_series(json_data, product):
 
 def get_streamflow(product, comid, sim_datetime_utc=None, timezone=None):
     """Downloads time seies from National Water Model for a given river.
-
     Downloads streamflow time series for a given river feature using the
     HydroShare archive and Web service. Units are in cubic feet per second as
     returned by HydroShare. For the API description, see
     https://apps.hydroshare.org/apps/nwm-data-explorer/api/
-
     Args:
         product: String indicating model product. Valid values are:
             analysis_assim, short_range, medium_range, long_range
@@ -234,20 +221,16 @@ def get_streamflow(product, comid, sim_datetime_utc=None, timezone=None):
         timezone: (Optional) Text or timezone instance describing time zone if
             time series should be temporally shifted, e.g., 'America/Chicago'.
             Otherwise, UTC time as returned from HydroShare is used.
-
     Returns:
         A list of dicts representing time series. Each series includes name,
         datetimes, and values. For example:
-
         {'name': 'Member 1 t00z',
          'dates': ['2016-06-02 01:00:00+00:00', '2016-06-02 02:00:00+00:00']
          'values': [257.2516, 1295.7293]}
-
     Raises:
         HTTPError: An error occurred accessing data from the Web service.
         ValueError: Service request returned no data, likely due to invalid
             input arguments.
-
     Example:
         >>> series = nwm.get_streamflow(
                 'short_range', 5671187, None, 'US/Central')
@@ -314,24 +297,19 @@ def _get_comid_indices(find_comids, nc_comids):
 
 def read_q_for_comids(nc_filename, comids):
     """Reads streamflow for a set of COMID identifiers in a given file.
-
     Reads streamflow in cubic meters per second for each river represented by
     a set of National Hydrography Dataset COMID identifiers from a National
     Water Model simulation result file.
-
     Args:
         nc_filename: Filename of input netCDF file of model results.
         comids: List or numpy array of integers representing COMIDs for the
             rivers whose streamflow value is to be returned.
-
     Returns:
         A dictionary with a 'flows' array of streamflow values in cubic meters
         per second in the same order as the input COMIDs, along with 'datetime'
         providing the date associated with the streamflow values. For example:
-
         {'flows': [10.3, 283.2, 3.6],
          'datetime': datetime.datetime(2016, 6, 21, 15, 0, tzinfo=<UTC>)}
-
     Example:
         >>> filename = 'example_file.nc'
         >>> comids = [5671187, 5670795]
@@ -352,7 +330,7 @@ def read_q_for_comids(nc_filename, comids):
         date = date_parser.parse(nc.model_output_valid_time.replace('_', ' '))
         date = date.replace(tzinfo=pytz.utc)
         result['datetime'] = date
-        nc_comids = nc.variables['station_id'][:]
+        nc_comids = nc.variables['feature_id'][:]
         nc_q = nc.variables['streamflow']
         indices = _get_comid_indices(comids, nc_comids)
         result['flows'] = nc_q[indices]
@@ -362,14 +340,11 @@ def read_q_for_comids(nc_filename, comids):
 def subset_channel_file(in_nc_filename, out_nc_filename, comids,
                         just_streamflow_var=False, include_id_var=True):
     """Extracts a subset of data from an input channel file to a new file.
-
     A National Water Model channel file contains data related to river
     channels such as streamflow. This function makes a copy of that file but
     only includes data for river features included within a list of National
     Hydrography Dataset COMID identifiers.
-
     The input and output files are netCDF files.
-
     Args:
         in_nc_filename: Filename of input netCDF file of model results.
         out_nc_filename: Filename for the resulting subsetted file.
@@ -397,18 +372,18 @@ def subset_channel_file(in_nc_filename, out_nc_filename, comids,
         else:
             vars_to_include = in_nc.variables.keys()
             attrs_to_exclude = []
-        if include_id_var and 'station_id' not in vars_to_include:
-            vars_to_include.append('station_id')
-        elif not include_id_var and 'station_id' in vars_to_include:
-            vars_to_include.remove('station_id')
-        nc_comids = in_nc.variables['station_id'][:]
+        if include_id_var and 'feature_id' not in vars_to_include:
+            vars_to_include.append('feature_id')
+        elif not include_id_var and 'feature_id' in vars_to_include:
+            vars_to_include.remove('feature_id')
+        nc_comids = in_nc.variables['feature_id'][:]
         index = _get_comid_indices(comids, nc_comids)
         with Dataset(out_nc_filename, 'w', format=in_nc.data_model) as out_nc:
             out_nc.setncatts({k: in_nc.getncattr(k) for k in in_nc.ncattrs()})
 
             for name, dim in in_nc.dimensions.iteritems():
                 length = len(dim) if not dim.isunlimited() else None
-                if name == 'station':
+                if name == 'feature_id':
                     out_nc.createDimension(name, len(comids))
                 else:
                     out_nc.createDimension(name, length)
@@ -420,7 +395,7 @@ def subset_channel_file(in_nc_filename, out_nc_filename, comids,
                     attributes = {k: var.getncattr(k) for k in var.ncattrs()
                                   if k not in attrs_to_exclude}
                     out_var.setncatts(attributes)
-                    if name == 'time':
+                    if name == 'time' or 'reference_time':
                         out_var[:] = var[:]
                     else:
                         out_var[:] = var[index]
@@ -429,14 +404,12 @@ def subset_channel_file(in_nc_filename, out_nc_filename, comids,
 def build_streamflow_cube(nc_files, comids=None, consistent_comid_order=True,
                           compute_max=True):
     """Reads streamflow from several files into a single array.
-
     Reads streamflow from several files into a single array. Each file from the
     National Water Model represents a single time step. This function can be
     used to read the streamflow values for all time steps in a given simulation
     into a single multidimensional numpy array. Only streamflow for the rivers
     represented by a set of National Hydrography Dataset COMID identifiers are
     included in the result.
-
     Args:
         nc_files: List of netCDF filenames. Files can have .nc or .gz
             extension. Zipped files are unzipped to a temporary folder and
@@ -449,25 +422,22 @@ def build_streamflow_cube(nc_files, comids=None, consistent_comid_order=True,
             processing a bit.
         compute_max: (Optional) True if maximum streamflow for each river
             should be returned as an additional array; False otherwise.
-
     Returns:
         Tuple consisting of:
             streamflow array (float)
             time array (int)
-            datetime object for the valid output time of the first file
-            array of maximum streamflow for each river (float), or None
         The streamflow array is sized by (number of time steps, number of
         rivers) and the time array is sized by (number of time steps). The time
         array uses an int data type to be compatible with netCDF. The time
         values are the total number of seconds between the valid output time
         for a given file and the valid output time of the first file. The max
         streamflow array is sized by (number of rivers).
-
     Example:
+        >>> from dateutil import parser
         >>> file_pattern = 'nwm.t00z.short_range.channel_rt.f00{0}.conus.nc.gz'
         >>> files = [file_pattern.format(i + 1) for i in range(15)]
         >>> comids = [5671187, 5670795]
-        >>> q, t, since_date, max_q = nwm.build_streamflow_cube(files, comids)
+        >>> q, t, max_q = nwm.build_streamflow_cube(files, comids)
     """
 
     if not len(nc_files):
@@ -482,18 +452,17 @@ def build_streamflow_cube(nc_files, comids=None, consistent_comid_order=True,
         comids = None
         with Dataset(nc_files[0], 'r') as nc:
             num_rivers = len(nc.variables['streamflow'])
-            if 'station_id' in nc.variables:
-                comids = nc.variables['station_id'][:]
+            if 'feature_id' in nc.variables:
+                comids = nc.variables['feature_id'][:]
 
     tmpdir = tempfile.gettempdir()
     tmpfile = None
     indices = None
-    seconds_since_date = None
-    out_q = np.zeros((len(nc_files), num_rivers))
+    out_q = np.zeros((len(nc_files), num_rivers), np.int)
     out_t = np.zeros((len(nc_files), ), np.int)
 
-    no_station_msg = ('COMIDs provided, but index to COMIDs cannot be built'
-                      'because {0} has no station_id variable')
+    no_feature_msg = ('COMIDs provided, but index to COMIDs cannot be built'
+                      'because {0} has no feature_id variable')
     for i, nc_file in enumerate(nc_files):
         if nc_file[-3:] == '.gz':
             tmpfile = os.path.join(tmpdir, os.path.basename(nc_file)[:-3])
@@ -501,19 +470,14 @@ def build_streamflow_cube(nc_files, comids=None, consistent_comid_order=True,
                 uz.write(z.read())
             nc_file = tmpfile
         with Dataset(nc_file, 'r') as nc:
-            date = date_parser.parse(
-                nc.model_output_valid_time.replace('_', ' '))
-            date = date.replace(tzinfo=pytz.utc)
-            if not seconds_since_date:
-                seconds_since_date = date
-            out_t[i] = (date - seconds_since_date).total_seconds()
+            out_t[i] = nc.variables['time'][0]
             if comids is None:
                 out_q[i] = nc.variables['streamflow'][:]
             else:
                 if indices is None or not consistent_comid_order:
-                    if 'station_id' not in nc.variables:
-                        raise Exception(no_station_msg.format(nc_file))
-                    nc_comids = nc.variables['station_id'][:]
+                    if 'feature_id' not in nc.variables:
+                        raise Exception(no_feature_msg.format(nc_file))
+                    nc_comids = nc.variables['feature_id'][:]
                     indices = _get_comid_indices(comids, nc_comids)
                 out_q[i] = nc.variables['streamflow'][indices]
 
@@ -525,19 +489,17 @@ def build_streamflow_cube(nc_files, comids=None, consistent_comid_order=True,
     else:
         max_q = None
 
-    return out_q, out_t, seconds_since_date, max_q
+    return out_q, out_t, max_q
 
 
 def combine_files(nc_files, output_file, comids=None,
                   consistent_comid_order=True, compute_max=True):
     """Combines streamflow from several files into a single netCDF file.
-
     Each file from the National Water Model represents a single time step. This
     function can be used to combine the streamflow arrays for all time steps in
     a given simulation into a single netCDF file. Provide an array of COMIDs to
     subset the data. Note that if you want to combine files in their entirety,
     you may want to try the external utilities NCO and ncrcat instead.
-
     Args:
         nc_files: List of netCDF filenames. Files can have .nc or .gz
             extension. Zipped files are unzipped to a temporary folder and
@@ -551,8 +513,8 @@ def combine_files(nc_files, output_file, comids=None,
             processing a bit.
         compute_max: (Optional) True if maximum streamflow for each river
             should be included as an additional array; False otherwise.
-
     Example:
+        >>> from dateutil import parser
         >>> file_pattern = 'nwm.t00z.short_range.channel_rt.f00{0}.conus.nc.gz'
         >>> files = [file_pattern.format(i + 1) for i in range(15)]
         >>> comids = [5671187, 5670795]
@@ -563,38 +525,35 @@ def combine_files(nc_files, output_file, comids=None,
     if not nc_files:
         raise Exception('No files to combine')
 
-    q, t, seconds_since_date, max_q = build_streamflow_cube(
+    q, t, max_q = build_streamflow_cube(
         nc_files, comids, consistent_comid_order)
-    time_string = seconds_since_date.strftime('%Y-%m-%d %H:%M %Z')
-    time_units = 'seconds since {0}'.format(time_string)
     num_rivers = len(q[0])
     if comids is None:
         with Dataset(nc_files[0], 'r') as nc:
-            if 'station_id' in nc.variables:
-                comids = nc.variables['station_id'][:]
-
+            if 'feature_id' in nc.variables:
+                comids = nc.variables['feature_id'][:]
     with Dataset(output_file, 'w') as nc:
         nc.createDimension('time', len(nc_files))
-        nc.createDimension('station', num_rivers)
+        nc.createDimension('feature_id', num_rivers)
 
         time_var = nc.createVariable('time', 'i', ('time',))
-        time_var.long_name = 'time'
+        time_var.long_name = 'validate output time'
         time_var.standard_name = 'time'
-        time_var.units = time_units
+        time_var.units = 'seconds since 1970-01-01 00:00:00 0:00'
         time_var[:] = t
 
         if comids is not None:
-            comid_var = nc.createVariable('station_id', 'i', ('station',))
+            comid_var = nc.createVariable('feature_id', 'i', ('feature_id',))
             comid_var[:] = comids
-            comid_var.long_name = 'Station id'
+            comid_var.long_name = 'Reach ID'
 
-        q_var = nc.createVariable('streamflow', 'f4', ('time', 'station'))
+        q_var = nc.createVariable('streamflow', 'i', ('time', 'feature_id'))
         q_var.long_name = 'River Flow'
         q_var.units = 'meter^3 / sec'
         q_var[:] = q
 
         if compute_max:
-            max_var = nc.createVariable('max_streamflow', 'f4', ('station',))
+            max_var = nc.createVariable('max_streamflow', 'i', ('feature_id',))
             max_var.long_name = 'Maximum River Flow'
             max_var.units = 'meter^3 / sec'
             max_var[:] = max_q
